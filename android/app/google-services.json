@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "749432039174",
+    "project_id": "investfolio-6dabc",
+    "storage_bucket": "investfolio-6dabc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:749432039174:android:d95b9dd777e1aac0862087",
+        "android_client_info": {
+          "package_name": "com.example.investfolio"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCsn3FlptPhxpMkIfsOdxoh65FlFuMiRP8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

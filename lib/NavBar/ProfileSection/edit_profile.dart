@@ -112,58 +112,53 @@ class _EditProfilePageState extends State<EditProfilePage> {
   //   }
   // }
   Future<void> _uploadImage() async {
-  await _pickImage();
-  final user = FirebaseAuth.instance.currentUser;
-  if (user != null && _imageFile != null) {
-    try {
-      // Show circular progress indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false, // To prevent tapping outside to dismiss
-        builder: (BuildContext context) {
-          return Center(
-            child: CircularProgressIndicator(),
-          );
-        },
-      );
+    await _pickImage();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null && _imageFile != null) {
+      try {
+        // Show circular progress indicator
+        showDialog(
+          context: context,
+          barrierDismissible: false, // To prevent tapping outside to dismiss
+          builder: (BuildContext context) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          },
+        );
 
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child('Profile Picture')
-          .child(user.uid)
-          .child('image.jpg');
-      final uploadTask = storageRef.putFile(_imageFile!);
-      final storageSnapshot = await uploadTask.whenComplete(() => null);
-      final downloadUrl = await storageSnapshot.ref.getDownloadURL();
+        final storageRef = FirebaseStorage.instance
+            .ref()
+            .child('Profile Picture')
+            .child(user.uid)
+            .child('image.jpg');
+        final uploadTask = storageRef.putFile(_imageFile!);
+        final storageSnapshot = await uploadTask.whenComplete(() => null);
+        final downloadUrl = await storageSnapshot.ref.getDownloadURL();
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .update({'profilepicture': downloadUrl});
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .update({'profilepicture': downloadUrl});
 
-      // Hide circular progress indicator
-      Navigator.pop(context);
+        // Hide circular progress indicator
+        Navigator.pop(context);
 
-      setState(() {
-        _fetchUserData();
-      });
-
-      // Navigate to ProfilePage
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MainPage()),
-      );
-    } catch (error) {
-      print('Error uploading image: $error');
-      // Hide circular progress indicator
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error uploading image')),
-      );
+        // Navigate to ProfilePage
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => MainPage()),
+        );
+      } catch (error) {
+        print('Error uploading image: $error');
+        // Hide circular progress indicator
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error uploading image')),
+        );
+      }
     }
   }
-}
-
 
   Future _pickImage() async {
     final picker = ImagePicker();
@@ -201,58 +196,56 @@ class _EditProfilePageState extends State<EditProfilePage> {
   //   }
   // }
   Future<void> _saveEditedName() async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user != null) {
-    try {
-      // Show circular progress indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return Center(
-            child: CircularProgressIndicator(),
-          );
-        },
-      );
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          },
+        );
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .update({'Name': _name});
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .update({'Name': _name});
 
-      // Add a 1-second delay to ensure the progress indicator is shown properly
-      await Future.delayed(Duration(seconds: 1));
+        // No need for the delay here
 
-      // Hide circular progress indicator
-      Navigator.pop(context);
-
-      // Navigate to ProfilePage
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => ProfilePage()),
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Name updated successfully',textAlign: TextAlign.center,),
-          duration: Duration(seconds: 3),
-        ),
-      );
-    } catch (error) {
-      print('Error updating name: $error');
-      // Hide circular progress indicator after the delay
-      Future.delayed(Duration(seconds: 1), () {
         Navigator.pop(context);
-      });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error updating name'),
-        ),
-      );
+        // Navigate to ProfilePage after the update is complete
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => ProfilePage()),
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Name updated successfully',
+              textAlign: TextAlign.center,
+            ),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      } catch (error) {
+        print('Error updating name: $error');
+
+        Navigator.pop(context);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating name'),
+          ),
+        );
+      }
     }
   }
-}
 
   void _openEditNameDialog() {
     showDialog(
@@ -282,7 +275,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
               onPressed: () {
                 Navigator.pop(context);
                 _saveEditedName();
-                
               },
               child: Text('Save'),
             ),
@@ -318,7 +310,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Navigator.pop(context);
                 // Save the edited name and close the dialog
                 _saveEditedEmail();
-                
               },
               child: Text('Save'),
             ),
@@ -327,76 +318,73 @@ class _EditProfilePageState extends State<EditProfilePage> {
       },
     );
   }
+
   Future<void> _saveEditedEmail() async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user != null) {
-    try {
-      // Show circular progress indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return Center(
-            child: CircularProgressIndicator(),
-          );
-        },
-      );
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        // Show circular progress indicator
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          },
+        );
 
-      // Update email in Firebase Authentication
-      await user.updateEmail(_email);
+        // Update email in Firebase Authentication
+        await user.updateEmail(_email);
 
-      // Update email in Firestore
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .update({'email': _email});
+        // Update email in Firestore
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .update({'email': _email});
 
-      // Add a 1-second delay to ensure the progress indicator is shown properly
-      await Future.delayed(Duration(seconds: 1));
-
-      // Hide circular progress indicator
-      Navigator.pop(context);
-
-      // Navigate to ProfilePage
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => ProfilePage()),
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              'Email updated successfully. Please check your email for verification.'),
-        ),
-      );
-    } on FirebaseAuthException catch (error) {
-      print('Error updating email: ${error.message}');
-      // Hide circular progress indicator after the delay
-      Future.delayed(Duration(seconds: 1), () {
+        // Hide circular progress indicator
         Navigator.pop(context);
-      });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error updating email: ${error.message}'),
-        ),
-      );
-    } catch (error) {
-      print('Unexpected error: $error');
-      // Hide circular progress indicator after the delay
-      Future.delayed(Duration(seconds: 1), () {
-        Navigator.pop(context);
-      });
+        // Navigate to ProfilePage
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => ProfilePage()),
+        );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Unexpected error occurred'),
-        ),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Email updated successfully. Please check your email for verification.'),
+          ),
+        );
+      } on FirebaseAuthException catch (error) {
+        print('Error updating email: ${error.message}');
+        // Hide circular progress indicator after the delay
+        Future.delayed(Duration(seconds: 1), () {
+          Navigator.pop(context);
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating email: ${error.message}'),
+          ),
+        );
+      } catch (error) {
+        print('Unexpected error: $error');
+        // Hide circular progress indicator after the delay
+        Future.delayed(Duration(seconds: 1), () {
+          Navigator.pop(context);
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Unexpected error occurred'),
+          ),
+        );
+      }
     }
   }
-}
-
 
   //For Password
   void _openEditPasswordDialog() {
@@ -485,7 +473,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 if (!passwordMismatch) {
                   // Save the edited password and close the dialog
                   _changePassword(currentPassword, newPassword);
-                  
                 }
               },
               child: Text('Save'),
@@ -495,125 +482,124 @@ class _EditProfilePageState extends State<EditProfilePage> {
       },
     );
   }
-  Future<void> _changePassword(String currentPassword, String newPassword) async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user != null) {
-    try {
-      // Show circular progress indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return Center(
-            child: CircularProgressIndicator(),
-          );
-        },
-      );
 
-      // Reauthenticate user before changing password
-      AuthCredential credential = EmailAuthProvider.credential(
-        email: user.email!,
-        password: currentPassword,
-      );
-      await user.reauthenticateWithCredential(credential);
+  Future<void> _changePassword(
+      String currentPassword, String newPassword) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        // Show circular progress indicator
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          },
+        );
 
-      // Add a 1-second delay to ensure the progress indicator is shown properly
-      await Future.delayed(Duration(seconds: 1));
+        // Reauthenticate user before changing password
+        AuthCredential credential = EmailAuthProvider.credential(
+          email: user.email!,
+          password: currentPassword,
+        );
+        await user.reauthenticateWithCredential(credential);
 
-      // Update password in Firebase Authentication
-      await user.updatePassword(newPassword);
+        // Update password in Firebase Authentication
+        await user.updatePassword(newPassword);
 
-      // Hide circular progress indicator
-      Navigator.pop(context);
-
-      // Navigate to ProfilePage
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => ProfilePage()),
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Password changed successfully'),
-        ),
-      );
-    } catch (error) {
-      print('Error changing password: $error');
-      String errorMessage = 'Error changing password';
-
-      if (error is FirebaseAuthException) {
-        switch (error.code) {
-          case 'wrong-password':
-            errorMessage = 'Current password is incorrect';
-            break;
-          case 'requires-recent-login':
-            errorMessage =
-                'This operation is sensitive and requires recent authentication. Please log in again before changing the password.';
-            break;
-          default:
-            errorMessage = 'An error occurred while changing the password';
-        }
-      }
-
-      // Hide circular progress indicator after the delay
-      Future.delayed(Duration(seconds: 1), () {
+        // Hide circular progress indicator
         Navigator.pop(context);
-      });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-        ),
-      );
+        // Navigate to ProfilePage
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => ProfilePage()),
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Password changed successfully'),
+          ),
+        );
+      } catch (error) {
+        print('Error changing password: $error');
+        String errorMessage = 'Error changing password';
+
+        if (error is FirebaseAuthException) {
+          switch (error.code) {
+            case 'wrong-password':
+              errorMessage = 'Current password is incorrect';
+              break;
+            case 'requires-recent-login':
+              errorMessage =
+                  'This operation is sensitive and requires recent authentication. Please log in again before changing the password.';
+              break;
+            default:
+              errorMessage = 'An error occurred while changing the password';
+          }
+        }
+
+        // Hide circular progress indicator after the delay
+        Future.delayed(Duration(seconds: 1), () {
+          Navigator.pop(context);
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+          ),
+        );
+      }
     }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       // extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          backgroundColor: Color.fromARGB(255, 17, 90, 22),
-          elevation: 0,
-          centerTitle: true,
-          title: Text(
-            'Edit Profile',
-            style: GoogleFonts.poppins(
-                color: Colors.white, fontSize: 18, letterSpacing: 1.5),
-          ),
-          iconTheme: IconThemeData(
-            color: Colors.white, // Replace yourColor with the desired color
-          ),
+      appBar: AppBar(
+        backgroundColor: Color.fromARGB(255, 17, 90, 22),
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          'Edit Profile',
+          style: GoogleFonts.poppins(
+              color: Colors.white, fontSize: 18, letterSpacing: 1.5),
         ),
+        iconTheme: IconThemeData(
+          color: Colors.white, // Replace yourColor with the desired color
+        ),
+      ),
       body: Stack(
         children: [
           Container(
-        height: double.infinity,
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('img/invst.jpg'),
-            fit: BoxFit.cover,
+            height: double.infinity,
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('img/invst.jpg'),
+                fit: BoxFit.cover,
+              ),
+            ),
           ),
-        ),
-      ),
-      Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.white.withOpacity(0.5),
-              const Color(0xFFEBF1ED).withOpacity(0.5),
-              const Color(0xFFEBF1ED).withOpacity(0.5),
-              Colors.white.withOpacity(0.7),
-              Colors.white.withOpacity(0.5),
-              const Color.fromARGB(255, 195, 214, 214).withOpacity(0.2),
-            ],
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.white.withOpacity(0.5),
+                  const Color(0xFFEBF1ED).withOpacity(0.5),
+                  const Color(0xFFEBF1ED).withOpacity(0.5),
+                  Colors.white.withOpacity(0.7),
+                  Colors.white.withOpacity(0.5),
+                  const Color.fromARGB(255, 195, 214, 214).withOpacity(0.2),
+                ],
+              ),
+            ),
           ),
-        ),),
           Center(
             child: SingleChildScrollView(
               child: Column(
@@ -685,15 +671,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         _buildOptionTile('Change Password', Icons.lock, () {
                           _openEditPasswordDialog();
                         }),
-                        _buildOptionTile('Change Profile Picture', Icons.image, () {
+                        _buildOptionTile('Change Profile Picture', Icons.image,
+                            () {
                           _uploadImage();
                         }),
                       ],
                     ),
                   ),
-                  SizedBox(
-                    height: MediaQuery.of(context).size.height / 10
-                  ),
+                  SizedBox(height: MediaQuery.of(context).size.height / 10),
                 ],
               ),
             ),
@@ -703,7 +688,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-   Widget _buildOptionTile(String title, IconData icon, Function() onTap) {
+  Widget _buildOptionTile(String title, IconData icon, Function() onTap) {
     return ListTile(
       title: Text(title),
       trailing: Icon(
