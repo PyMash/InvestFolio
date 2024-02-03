@@ -10,7 +10,7 @@ InvestFolio is a Flutter app designed to help users track their offline investme
 
 ## Download APK
 
-You can download the latest version of InvestFolio [here]([https://drive.google.com/file/d/16Mckw-W58nXlmv__cv9rWak4lvNMgnkd/view?usp=sharing](https://drive.google.com/drive/folders/1zFh3fc9PYf4WHf531mvH6rjokzeNrZET?usp=sharing))
+You can download the latest version of InvestFolio [here]([https://drive.google.com/drive/folders/1zFh3fc9PYf4WHf531mvH6rjokzeNrZET?usp=sharing])
 
 ## Installation
 
