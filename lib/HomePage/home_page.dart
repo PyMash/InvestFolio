@@ -108,45 +108,45 @@ class _HomePageState extends State<HomePage> {
     _fetchUserProfile();
   }
 
-Future<void> _fetchUserProfile() async {
-  final User? user = _auth.currentUser;
-  print(user);
+  Future<void> _fetchUserProfile() async {
+    final User? user = _auth.currentUser;
+    print(user);
 
-  if (user != null) {
-    // Try to fetch the cached profile picture URL and name from local storage
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    final cachedUrl = prefs.getString('profilePictureUrl') ?? '';
-    final cachedName = prefs.getString('displayName') ?? '';
+    if (user != null) {
+      // Try to fetch the cached profile picture URL and name from local storage
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      final cachedUrl = prefs.getString('profilePictureUrl') ?? '';
+      final cachedName = prefs.getString('displayName') ?? '';
 
-    // Fetch the user data from Firestore
-    final DocumentSnapshot<Map<String, dynamic>> userDoc =
-        await _firestore.collection('users').doc(user.uid).get();
+      // Fetch the user data from Firestore
+      final DocumentSnapshot<Map<String, dynamic>> userDoc =
+          await _firestore.collection('users').doc(user.uid).get();
 
-    if (userDoc.exists) {
-      final fetchedUrl = userDoc['profilepicture'] ?? '';
-      final fetchedName = userDoc['Name'] ?? '';
-      print('Fetched Profile Picture URL: $fetchedUrl'); // Debug print
-      print('Fetched Name: $fetchedName'); // Debug print
+      if (userDoc.exists) {
+        final fetchedUrl = userDoc['profilepicture'] ?? '';
+        final fetchedName = userDoc['Name'] ?? '';
+        print('Fetched Profile Picture URL: $fetchedUrl'); // Debug print
+        print('Fetched Name: $fetchedName'); // Debug print
 
-      // Check if the cached URL matches the fetched URL
-      if (cachedUrl != fetchedUrl) {
-        // Cache the fetched URL locally
-        prefs.setString('profilePictureUrl', fetchedUrl);
+        // Check if the cached URL matches the fetched URL
+        if (cachedUrl != fetchedUrl) {
+          // Cache the fetched URL locally
+          prefs.setString('profilePictureUrl', fetchedUrl);
+        }
+
+        // Check if the cached name matches the fetched name
+        if (cachedName != fetchedName) {
+          // Cache the fetched name locally
+          prefs.setString('displayName', fetchedName);
+        }
+
+        setState(() {
+          profilePictureUrl = fetchedUrl ?? ''; // Ensure it's not null
+          displayName = fetchedName ?? '';
+        });
       }
-
-      // Check if the cached name matches the fetched name
-      if (cachedName != fetchedName) {
-        // Cache the fetched name locally
-        prefs.setString('displayName', fetchedName);
-      }
-
-      setState(() {
-        profilePictureUrl = fetchedUrl ?? ''; // Ensure it's not null
-        displayName = fetchedName ?? '';
-      });
     }
   }
-}
 
   Map<String, double> calculateTotalPortfolioData(
       List<Map<String, dynamic>> investmentData) {
@@ -193,182 +193,183 @@ Future<void> _fetchUserProfile() async {
 
     return data.cast<Map<String, dynamic>>();
   }
-  Future<void> addData(
-  Map<String, dynamic> newData, BuildContext context) async {
-  try {
-    final user = FirebaseAuth.instance.currentUser;
-    final userId = user?.uid;
 
-    if (userId == null) {
-      return;
-    }
+  Future onAddData(
+      Map<String, dynamic> newData, BuildContext parentContext) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      final userId = user?.uid;
 
-    final DocumentReference userRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .collection('Investment')
-        .doc('InvestmentData');
-
-    DocumentSnapshot userDoc = await userRef.get();
-    DateTime startingInvestmentDate = newData['StartingInvestmentDate'];
-    String roiAmountStr = newData['returnAmount'] ?? '0.0';
-    String investmentAmountStr = newData['investmentAmount'] ?? '0.0';
-
-    double roiAmount = double.parse(roiAmountStr) ?? 0.0;
-    double investmentAmount = double.parse(investmentAmountStr) ?? 0.0;
-
-    newData['StartingInvestmentDate'] = startingInvestmentDate;
-    DocumentReference newInvestmentRef =
-        await userRef.collection('Investments').add(newData);
-
-    List<Map<String, dynamic>> dataPoints = [];
-
-    if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
-      Map<String, dynamic>? userData =
-          userDoc.data() as Map<String, dynamic>?;
-      if (userData != null && userData.containsKey('dataPoints')) {
-        dataPoints = List<Map<String, dynamic>>.from(userData['dataPoints']);
+      if (userId == null) {
+        return;
       }
-    }
 
-    DateTime currentDate = DateTime.now();
-    int monthsDifference = currentDate.month - startingInvestmentDate.month;
-    int yearsDifference = currentDate.year - startingInvestmentDate.year;
-    int totalMonths = yearsDifference * 12 + monthsDifference;
+      final DocumentReference userRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('Investment')
+          .doc('InvestmentData');
 
-    // Reset currentDate to the initial date
-    currentDate = startingInvestmentDate;
+      DocumentSnapshot userDoc = await userRef.get();
+      DateTime startingInvestmentDate = newData['StartingInvestmentDate'];
+      String roiAmountStr = newData['returnAmount'] ?? '0.0';
+      String investmentAmountStr = newData['investmentAmount'] ?? '0.0';
 
-    // Get the month when the investment is added
-    int startingMonth = startingInvestmentDate.month;
+      double roiAmount = double.parse(roiAmountStr) ?? 0.0;
+      double investmentAmount = double.parse(investmentAmountStr) ?? 0.0;
 
-    for (int i = 0; i <= totalMonths; i++) {
-      String monthName = DateFormat('MMM').format(currentDate);
-      String yearMonth = DateFormat('yyyy-MM').format(currentDate);
-      double monthlyROI = (i == 0 && startingMonth == currentDate.month)
-          ? 0.0 // Assign 0 return for the starting month
-          : roiAmount / totalMonths; // Distribute the total return
+      newData['StartingInvestmentDate'] = startingInvestmentDate;
+      DocumentReference newInvestmentRef =
+          await userRef.collection('Investments').add(newData);
 
-      double monthlyInvestment = (i == 0)
-          ? investmentAmount
-          : 0.0; // Assign investmentAmount only for the starting month
+      List<Map<String, dynamic>> dataPoints = [];
 
-      int existingMonthIndex =
-          dataPoints.indexWhere((point) => point['yearMonth'] == yearMonth);
-
-      if (existingMonthIndex >= 0) {
-        // Update the existing data point
-        Map<String, dynamic> existingPoint = dataPoints[existingMonthIndex];
-        existingPoint['roiAmount'] += monthlyROI;
-
-        // Ensure InvestmentAmount exists in the existing data point
-        if (existingPoint.containsKey('InvestmentAmount')) {
-          existingPoint['InvestmentAmount'] += monthlyInvestment;
-        } else {
-          existingPoint['InvestmentAmount'] = monthlyInvestment;
+      if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
+        Map<String, dynamic>? userData =
+            userDoc.data() as Map<String, dynamic>?;
+        if (userData != null && userData.containsKey('dataPoints')) {
+          dataPoints = List<Map<String, dynamic>>.from(userData['dataPoints']);
         }
-      } else {
-        // Create a new data point
-        Map<String, dynamic> dataPoint = {
-          'yearMonth': yearMonth,
-          'month': monthName,
-          'roiAmount': monthlyROI,
-          'InvestmentAmount': monthlyInvestment,
-        };
-        dataPoints.add(dataPoint);
       }
 
-      print(
-          'Month: $monthName, ROI: $monthlyROI, Investment: $monthlyInvestment, DataPoints: $dataPoints');
+      DateTime currentDate = DateTime.now();
+      int monthsDifference = currentDate.month - startingInvestmentDate.month;
+      int yearsDifference = currentDate.year - startingInvestmentDate.year;
+      int totalMonths = yearsDifference * 12 + monthsDifference;
 
-      // Update currentDate with proper handling for month increment
-      currentDate = DateTime(
-        currentDate.year,
-        currentDate.month + 1,
-        currentDate.day,
+      // Reset currentDate to the initial date
+      currentDate = startingInvestmentDate;
+
+      // Get the month when the investment is added
+      int startingMonth = startingInvestmentDate.month;
+
+      for (int i = 0; i <= totalMonths; i++) {
+        String monthName = DateFormat('MMM').format(currentDate);
+        String yearMonth = DateFormat('yyyy-MM').format(currentDate);
+        double monthlyROI = (i == 0 && startingMonth == currentDate.month)
+            ? 0.0 // Assign 0 return for the starting month
+            : roiAmount / totalMonths; // Distribute the total return
+
+        double monthlyInvestment = (i == 0)
+            ? investmentAmount
+            : 0.0; // Assign investmentAmount only for the starting month
+
+        int existingMonthIndex =
+            dataPoints.indexWhere((point) => point['yearMonth'] == yearMonth);
+
+        if (existingMonthIndex >= 0) {
+          // Update the existing data point
+          Map<String, dynamic> existingPoint = dataPoints[existingMonthIndex];
+          existingPoint['roiAmount'] += monthlyROI;
+
+          // Ensure InvestmentAmount exists in the existing data point
+          if (existingPoint.containsKey('InvestmentAmount')) {
+            existingPoint['InvestmentAmount'] += monthlyInvestment;
+          } else {
+            existingPoint['InvestmentAmount'] = monthlyInvestment;
+          }
+        } else {
+          // Create a new data point
+          Map<String, dynamic> dataPoint = {
+            'yearMonth': yearMonth,
+            'month': monthName,
+            'roiAmount': monthlyROI,
+            'InvestmentAmount': monthlyInvestment,
+          };
+          dataPoints.add(dataPoint);
+        }
+
+        print(
+            'Month: $monthName, ROI: $monthlyROI, Investment: $monthlyInvestment, DataPoints: $dataPoints');
+
+        // Update currentDate with proper handling for month increment
+        currentDate = DateTime(
+          currentDate.year,
+          currentDate.month + 1,
+          currentDate.day,
+        );
+      }
+
+      // Update Firestore document after constructing the entire dataPoints list
+      await userRef.set({
+        'dataPoints': dataPoints,
+      });
+
+      List<Map<String, dynamic>> dataPoints2 = [];
+      int totalMonths2 = yearsDifference * 12 + monthsDifference;
+
+      // Create a new instance of currentDate2 for the second loop
+      DateTime currentDate2 = DateTime.now();
+
+      for (int i = 0; i <= totalMonths2; i++) {
+        String monthName2 = DateFormat('MMM').format(currentDate2);
+        String yearMonth2 = DateFormat('yyyy-MM').format(currentDate2);
+        double monthlyROI2 =
+            (i == totalMonths2 && startingMonth == currentDate2.month)
+                ? 0.0 // Assign 0 return for the starting month
+                : roiAmount / totalMonths2; // Distribute the total return
+
+        double monthlyInvestment2 = (i == totalMonths2)
+            ? investmentAmount
+            : 0.0; // Assign investmentAmount only for the starting month
+
+        Map<String, dynamic> dataPoint2 = {
+          'yearMonth': yearMonth2,
+          'month': monthName2,
+          'roiAmount': monthlyROI2,
+          'InvestmentAmount': monthlyInvestment2,
+        };
+        dataPoints2.add(dataPoint2);
+
+        print(
+            'Month: $monthName2, ROI: $monthlyROI2, Investment: $monthlyInvestment2, DataPoints2: $dataPoints2');
+
+        // Update currentDate2 with proper handling for month decrement
+        if (currentDate2.month > 1) {
+          currentDate2 = DateTime(
+            currentDate2.year,
+            currentDate2.month - 1,
+            currentDate2.day,
+          );
+        } else {
+          currentDate2 = DateTime(
+            currentDate2.year - 1,
+            12, // December
+            currentDate2.day,
+          );
+        }
+      }
+
+      // Update Firestore document after constructing the entire dataPoints2 list
+      await newInvestmentRef.update({
+        'dataPoints': dataPoints2,
+      });
+
+      Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const MyApp()),
+          ModalRoute.withName("/Home"));
+    } catch (error) {
+      print('Error: $error');
+      showDialog(
+        context: context,
+        builder: (BuildContext dialogContext) {
+          return AlertDialog(
+            title: Text('Error'),
+            content: Text('An error occurred. Please try again later.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(); // Close the dialog
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
       );
     }
-
-    // Update Firestore document after constructing the entire dataPoints list
-    await userRef.set({
-      'dataPoints': dataPoints,
-    });
-
-    List<Map<String, dynamic>> dataPoints2 = [];
-    int totalMonths2 = yearsDifference * 12 + monthsDifference;
-
-    // Create a new instance of currentDate2 for the second loop
-    DateTime currentDate2 = DateTime.now();
-
-    for (int i = 0; i <= totalMonths2; i++) {
-      String monthName2 = DateFormat('MMM').format(currentDate2);
-      String yearMonth2 = DateFormat('yyyy-MM').format(currentDate2);
-      double monthlyROI2 = (i == totalMonths2 && startingMonth == currentDate2.month)
-          ? 0.0 // Assign 0 return for the starting month
-          : roiAmount / totalMonths2; // Distribute the total return
-
-      double monthlyInvestment2 = (i == totalMonths2)
-          ? investmentAmount
-          : 0.0; // Assign investmentAmount only for the starting month
-
-      Map<String, dynamic> dataPoint2 = {
-        'yearMonth': yearMonth2,
-        'month': monthName2,
-        'roiAmount': monthlyROI2,
-        'InvestmentAmount': monthlyInvestment2,
-      };
-      dataPoints2.add(dataPoint2);
-
-      print(
-          'Month: $monthName2, ROI: $monthlyROI2, Investment: $monthlyInvestment2, DataPoints2: $dataPoints2');
-
-      // Update currentDate2 with proper handling for month decrement
-      if (currentDate2.month > 1) {
-        currentDate2 = DateTime(
-          currentDate2.year,
-          currentDate2.month - 1,
-          currentDate2.day,
-        );
-      } else {
-        currentDate2 = DateTime(
-          currentDate2.year - 1,
-          12, // December
-          currentDate2.day,
-        );
-      }
-    }
-
-    // Update Firestore document after constructing the entire dataPoints2 list
-    await newInvestmentRef.update({
-      'dataPoints': dataPoints2,
-    });
-
-    Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const MyApp()),
-        ModalRoute.withName("/Home"));
-  } catch (error) {
-    print('Error: $error');
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Error'),
-          content: Text('An error occurred. Please try again later.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
   }
-}
-
 
   Future _restartApp() async {
     // fetchData2();
@@ -631,13 +632,15 @@ Future<void> _fetchUserProfile() async {
                                           margin: const EdgeInsets.all(8.0),
                                           child: GestureDetector(
                                             onTap: () {
+                                              BuildContext parentContext =
+                                                  context;
                                               showDialog(
-                                                context: context,
+                                                context: parentContext,
                                                 builder: (dialogContext) {
                                                   return DataInputDialog(
                                                     onAddData: (newData) async {
-                                                      await addData(
-                                                          newData, context);
+                                                      await onAddData(newData,
+                                                          parentContext);
                                                       // Navigator.of(dialogContext)
                                                       //     .pop(); // Close the dialog
                                                     },
@@ -739,9 +742,10 @@ Future<void> _fetchUserProfile() async {
                                                     investmentType
                                                         .toString()
                                                         .toUpperCase(),
-                                                        softWrap: true,
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow.ellipsis,
+                                                    softWrap: true,
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
                                                     style: const TextStyle(
                                                         fontWeight:
                                                             FontWeight.bold,
@@ -754,9 +758,10 @@ Future<void> _fetchUserProfile() async {
                                                     investmentName
                                                         .toString()
                                                         .toUpperCaseAfterSpace(),
-                                                        softWrap: true,
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow.ellipsis,
+                                                    softWrap: true,
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
                                                     style: const TextStyle(
                                                         fontWeight:
                                                             FontWeight.w500),
@@ -836,35 +841,38 @@ Future<void> _fetchUserProfile() async {
               ),
             ),
             FutureBuilder<List<Map<String, dynamic>>>(
-        future: fetchData2(),
-        builder: (context, snapshot) {
-          return Positioned.fill(
-            child: Visibility(
-              visible: snapshot.connectionState == ConnectionState.waiting,
-              child: FutureBuilder(
-                future: Future.delayed(Duration(seconds: 1)), // Add an extra second delay
-                builder: (context, delaySnapshot) {
-                  if (delaySnapshot.connectionState == ConnectionState.waiting) {
-                    // Display CircularProgressIndicator during the delay
-                    return Container(
-                      color: Colors.white,
-                      child: const Center(
-                        child: CircularProgressIndicator(color: Color(0xFF3A5F0B)),
-                      ),
-                    );
-                  } else {
-                    // Data is loaded, so hide CircularProgressIndicator
-                    return SizedBox.shrink();
-                  }
-                },
-              ),
+              future: fetchData2(),
+              builder: (context, snapshot) {
+                return Positioned.fill(
+                  child: Visibility(
+                    visible:
+                        snapshot.connectionState == ConnectionState.waiting,
+                    child: FutureBuilder(
+                      future: Future.delayed(
+                          Duration(seconds: 1)), // Add an extra second delay
+                      builder: (context, delaySnapshot) {
+                        if (delaySnapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          // Display CircularProgressIndicator during the delay
+                          return Container(
+                            color: Colors.white,
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                  color: Color(0xFF3A5F0B)),
+                            ),
+                          );
+                        } else {
+                          // Data is loaded, so hide CircularProgressIndicator
+                          return SizedBox.shrink();
+                        }
+                      },
+                    ),
+                  ),
+                );
+              },
             ),
-          );
-        },
-      ),
           ],
         ),
-       
       ),
     );
   }

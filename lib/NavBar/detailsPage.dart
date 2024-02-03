@@ -118,17 +118,25 @@ class _DetailsNavPageState extends State<DetailsNavPage> {
   }
 
   double getAvgMonthlyReturn(List<DataPoint> dataPoints) {
-    double totalROI = 0;
-    int monthsWithPositiveROI = 0;
-
-    for (DataPoint dataPoint in dataPoints) {
-      if (dataPoint.roiAmount > 0) {
-        totalROI += dataPoint.roiAmount;
-        monthsWithPositiveROI++;
-      }
+    if (dataPoints.length < 2) {
+      return 0.0; // Return 0 if there are not enough data points
     }
 
-    return monthsWithPositiveROI > 0 ? totalROI / monthsWithPositiveROI : 0.0;
+    // Sort the dataPoints list by year and month
+    dataPoints.sort((a, b) {
+      if (a.year == b.year) {
+        return a.month.compareTo(b.month);
+      } else {
+        return a.year - b.year;
+      }
+    });
+
+    // Calculate the average monthly return based on the last two months
+    double avgMonthlyReturn = (dataPoints.last.roiAmount +
+            dataPoints[dataPoints.length - 2].roiAmount) /
+        2;
+
+    return avgMonthlyReturn;
   }
 
   //fetch individual investment
@@ -236,12 +244,10 @@ class _DetailsNavPageState extends State<DetailsNavPage> {
                               child: Text(
                                 'No investments were found.\nAdd investments to view the analysis.',
                                 style: GoogleFonts.poppins(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.green.shade900,
-                                  letterSpacing: 1
-                                  
-                                ),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.green.shade900,
+                                    letterSpacing: 1),
                                 textAlign: TextAlign.center,
                               ),
                             ),
@@ -249,33 +255,53 @@ class _DetailsNavPageState extends State<DetailsNavPage> {
                         }
                         final totalData =
                             calculateTotalPortfolioData(investmentData);
-              
+
                         final totalInvestment = totalData['totalInvestment'];
                         final totalROI = totalData['totalROI'];
-              
+
                         final returnPercentage =
                             (totalROI! / totalInvestment!) * 100;
                         final profit = totalROI > totalInvestment
                             ? totalROI - totalInvestment
                             : 0.0;
-                        int estimateMonthsToProfit(
-                            double totalInvestment, double avgMonthlyReturn) {
+                        int estimatedMonthsToProfitF(
+                            double totalInvestment,
+                            double alreadyReceivedReturn,
+                            List<DataPoint> dataPoints) {
+                          if (dataPoints.length < 2) {
+                            // Not enough data points to calculate
+                            return -1; // Return a special value to indicate invalid input
+                          }
+
+                          // Sort the dataPoints list by year and month
+                          dataPoints.sort((a, b) {
+                            if (a.year == b.year) {
+                              return a.month.compareTo(b.month);
+                            } else {
+                              return a.year - b.year;
+                            }
+                          });
+
+                          double avgMonthlyReturn = (dataPoints.last.roiAmount +
+                                  dataPoints[dataPoints.length - 2].roiAmount) /
+                              2;
+
                           if (avgMonthlyReturn <= 0) {
                             // Avoid division by zero or negative values
                             return -1; // Return a special value to indicate invalid input
                           }
-              
-                          double cumulativeROI = 0;
+
+                          double cumulativeROI = alreadyReceivedReturn;
                           int months = 0;
-              
+
                           while (cumulativeROI < totalInvestment) {
                             cumulativeROI += avgMonthlyReturn;
                             months++;
                           }
-              
+
                           return months;
                         }
-              
+
                         return Padding(
                           padding: const EdgeInsets.only(top: 25),
                           child: Column(
@@ -364,8 +390,11 @@ class _DetailsNavPageState extends State<DetailsNavPage> {
                                     double avgMonthlyReturn =
                                         getAvgMonthlyReturn(dataPoints);
                                     int estimatedMonthsToProfit =
-                                        estimateMonthsToProfit(
-                                            totalInvestment, avgMonthlyReturn);
+                                        estimatedMonthsToProfitF(
+                                      totalInvestment,
+                                      totalROI,
+                                      dataPoints,
+                                    );
                                     return Column(
                                       children: [
                                         Row(
@@ -395,15 +424,14 @@ class _DetailsNavPageState extends State<DetailsNavPage> {
                                         SizedBox(
                                           height: 5,
                                         ),
-                                        if(estimatedMonthsToProfit>0)
-                                        Text(
-                                          ' Estimate profit within $estimatedMonthsToProfit Months',
-                                          style: GoogleFonts.redHatDisplay(
-                                              letterSpacing: 1,
-                                              fontWeight: FontWeight.w500,
-                                              fontSize: 15),
-                                        ),
-                                        
+                                        if (estimatedMonthsToProfit > 0)
+                                          Text(
+                                            ' Estimate profit within $estimatedMonthsToProfit Months',
+                                            style: GoogleFonts.redHatDisplay(
+                                                letterSpacing: 1,
+                                                fontWeight: FontWeight.w500,
+                                                fontSize: 15),
+                                          ),
                                       ],
                                     );
                                   }
@@ -423,7 +451,6 @@ class _DetailsNavPageState extends State<DetailsNavPage> {
                                           horizontal: 20, vertical: 10),
                                       child: Column(
                                         children: [
-                                          
                                           AspectRatio(
                                             aspectRatio:
                                                 1.8, // Adjust the aspect ratio to control pie chart size
@@ -468,7 +495,7 @@ class _DetailsNavPageState extends State<DetailsNavPage> {
                                             ),
                                           ),
                                           // Add spacing between pie chart and legend
-              
+
                                           LegendWidget(
                                               totalInvestment: totalInvestment,
                                               returnAmount: totalROI,
@@ -482,7 +509,9 @@ class _DetailsNavPageState extends State<DetailsNavPage> {
                                             totalInvestment: totalInvestment,
                                             returnAmount: totalROI,
                                           ),
-                                          SizedBox(height: 5,)
+                                          SizedBox(
+                                            height: 5,
+                                          )
                                         ],
                                       ),
                                     )),

@@ -372,6 +372,10 @@ class _EditInvestmentPopupState extends State<EditInvestmentPopup> {
           .doc(widget.documentId)
           .delete();
 
+      // Close the popup or navigate to another page as needed
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => MainPage()));
+
       // Display success message to the user
       final snackBar = SnackBar(
         backgroundColor: Colors.red,
@@ -385,18 +389,15 @@ class _EditInvestmentPopupState extends State<EditInvestmentPopup> {
 
       ScaffoldMessenger.of(context).showSnackBar(snackBar);
 
-// Close the popup or navigate to another page as needed
-      await Future.delayed(Duration(seconds: 2));
+      // Delay before dismissing the snackbar
+      // await Future.delayed(Duration(seconds: 2));
 
-// Dismiss the snackbar
-      ScaffoldMessenger.of(context).removeCurrentSnackBar();
-      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) =>  MainPage()));
+      // // Dismiss the snackbar
+      // ScaffoldMessenger.of(context).removeCurrentSnackBar();
     } catch (e) {
       // Handle Firestore errors here
       print('Error deleting data: $e');
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -407,7 +408,6 @@ class _EditInvestmentPopupState extends State<EditInvestmentPopup> {
           duration: Duration(seconds: 2),
         ),
       );
-      // You may want to show a message to the user, set a state, or use a Snackbar
     } finally {
       // Hide the circular progress indicator after completion (whether success or error)
       hideDeleteProgressDialog();
@@ -418,7 +418,7 @@ class _EditInvestmentPopupState extends State<EditInvestmentPopup> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return Center(
+        return const Center(
           child: CircularProgressIndicator(
             color: Color.fromARGB(255, 40, 85, 42),
           ),

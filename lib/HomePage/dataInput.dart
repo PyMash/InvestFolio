@@ -51,25 +51,30 @@ class _DataInputDialogState extends State<DataInputDialog> {
   }
 
   void _handleAddData() {
-    if (_formKey.currentState!.validate()) {
-      final investmentType = investmentTypeController.text;
-      final investmentName = investmentNameController.text;
-      final investmentAmount = investmentAmountController.text;
-      final returnAmount = returnAmountController.text;
+  if (_formKey.currentState!.validate()) {
+    final investmentType = investmentTypeController.text;
+    final investmentName = investmentNameController.text;
+    final investmentAmount = investmentAmountController.text;
+    final returnAmount = returnAmountController.text;
 
-      final newData = {
-        'investmentType': investmentType,
-        'investmentName': investmentName,
-        'investmentAmount': investmentAmount,
-        'returnAmount': returnAmount,
-        'StartingInvestmentDate': StartingInvestmentDate,
-      };
+    final newData = {
+      'investmentType': investmentType,
+      'investmentName': investmentName,
+      'investmentAmount': investmentAmount,
+      'returnAmount': returnAmount,
+      'StartingInvestmentDate': StartingInvestmentDate,
+    };
 
-      widget.onAddData(newData);
+    // Store the parent context before calling the asynchronous function
+    BuildContext parentContext = context;
 
-      Navigator.of(context).pop(); // Close the dialog
-    }
+    // Call the asynchronous function with the stored parent context
+    widget.onAddData(newData,);
+
+    Navigator.of(context).pop(); // Close the dialog
   }
+}
+
 
   bool isDouble(String value) {
     try {

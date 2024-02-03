@@ -226,17 +226,25 @@ class _InvestmentDetailPageState extends State<InvestmentDetailPage> {
   }
 
   double getAvgMonthlyReturn(List<DataPoint> dataPoints) {
-    double totalROI = 0;
-    int monthsWithPositiveROI = 0;
-
-    for (DataPoint dataPoint in dataPoints) {
-      if (dataPoint.roiAmount > 0) {
-        totalROI += dataPoint.roiAmount;
-        monthsWithPositiveROI++;
-      }
+    if (dataPoints.length < 2) {
+      return 0.0; // Return 0 if there are not enough data points
     }
 
-    return monthsWithPositiveROI > 0 ? totalROI / monthsWithPositiveROI : 0.0;
+    // Sort the dataPoints list by year and month
+    dataPoints.sort((a, b) {
+      if (a.year == b.year) {
+        return a.month.compareTo(b.month);
+      } else {
+        return a.year - b.year;
+      }
+    });
+
+    // Calculate the average monthly return based on the last two months
+    double avgMonthlyReturn = (dataPoints.last.roiAmount +
+            dataPoints[dataPoints.length - 2].roiAmount) /
+        2;
+
+    return avgMonthlyReturn;
   }
 
   late double investedAmount;
@@ -323,14 +331,34 @@ class _InvestmentDetailPageState extends State<InvestmentDetailPage> {
                   final profit = returnAmount > investedAmount
                       ? returnAmount - investedAmount
                       : 0.0;
-                  int estimateMonthsToProfit(
-                      double totalInvestment, double avgMonthlyReturn) {
+                  int estimatedMonthsToProfitF(
+                      double totalInvestment,
+                      double alreadyReceivedReturn,
+                      List<DataPoint> dataPoints) {
+                    if (dataPoints.length < 2) {
+                      // Not enough data points to calculate
+                      return -1; // Return a special value to indicate invalid input
+                    }
+
+                    // Sort the dataPoints list by year and month
+                    dataPoints.sort((a, b) {
+                      if (a.year == b.year) {
+                        return a.month.compareTo(b.month);
+                      } else {
+                        return a.year - b.year;
+                      }
+                    });
+
+                    double avgMonthlyReturn = (dataPoints.last.roiAmount +
+                            dataPoints[dataPoints.length - 2].roiAmount) /
+                        2;
+
                     if (avgMonthlyReturn <= 0) {
                       // Avoid division by zero or negative values
                       return -1; // Return a special value to indicate invalid input
                     }
 
-                    double cumulativeROI = 0;
+                    double cumulativeROI = alreadyReceivedReturn;
                     int months = 0;
 
                     while (cumulativeROI < totalInvestment) {
@@ -348,7 +376,8 @@ class _InvestmentDetailPageState extends State<InvestmentDetailPage> {
                         Padding(
                           padding: const EdgeInsets.all(5.0),
                           child: Text(
-                            '${investmentType.toString().toUpperCase()}',textAlign: TextAlign.center,
+                            '${investmentType.toString().toUpperCase()}',
+                            textAlign: TextAlign.center,
                             style: GoogleFonts.orbitron(
                                 fontWeight: FontWeight.bold),
                           ),
@@ -414,8 +443,12 @@ class _InvestmentDetailPageState extends State<InvestmentDetailPage> {
                               double avgMonthlyReturn =
                                   getAvgMonthlyReturn(dataPoints);
                               int estimatedMonthsToProfit =
-                                  estimateMonthsToProfit(
-                                      investedAmount, avgMonthlyReturn);
+                                  estimatedMonthsToProfitF(
+                                investedAmount,
+                                returnAmount,
+                                dataPoints,
+                              );
+
                               return Column(
                                 children: [
                                   Row(
@@ -516,79 +549,6 @@ class _InvestmentDetailPageState extends State<InvestmentDetailPage> {
                           investedAmount: investedAmount,
                           returnAmount: returnAmount,
                         ),
-                        // SizedBox(
-                        //   height: 20,
-                        // ),
-
-                        // Padding(
-                        //   padding: const EdgeInsets.all(20.0),
-                        //   child: Row(
-                        //     mainAxisAlignment: MainAxisAlignment.center,
-                        //     children: [
-                        //       ElevatedButton(
-                        //         style: ElevatedButton.styleFrom(
-                        //             backgroundColor:
-                        //                 const Color.fromARGB(255, 28, 68, 30)),
-                        //         onPressed: () {
-                        //           Navigator.of(context).push(
-                        //             PageRouteBuilder(
-                        //               pageBuilder: (context, animation,
-                        //                       secondaryAnimation) =>
-                        //                   EditInvestmentPopup(
-                        //                 initialInvestmentAmount: investedAmount,
-                        //                 initialReturnAmount: returnAmount,
-                        //                 documentId: widget.documentId,
-                        //               ),
-                        //               transitionsBuilder: (context, animation,
-                        //                   secondaryAnimation, child) {
-                        //                 return child;
-                        //               },
-                        //               transitionDuration: Duration(
-                        //                   seconds:
-                        //                       1), // Set the duration to 0 seconds for no animation
-                        //             ),
-                        //           );
-
-                        //           // showBottomSheet(
-                        //           //   context: context,
-                        //           //   builder: (context) => EditInvestmentPopup(
-                        //           //     initialInvestmentAmount: investedAmount,
-                        //           //     initialReturnAmount: returnAmount,
-                        //           //     documentId: documentId,
-                        //           //   ),
-
-                        //           // );
-                        //         },
-                        //         child: Row(
-                        //           mainAxisAlignment: MainAxisAlignment.center,
-                        //           mainAxisSize: MainAxisSize.min,
-                        //           children: [
-                        //             Text(
-                        //               'Edit Investment',
-                        //               style: GoogleFonts.roboto(
-                        //                   color: Colors.white),
-                        //             ),
-                        //             SizedBox(
-                        //               width: 5,
-                        //             ),
-                        //             Icon(
-                        //               Icons.edit_note_sharp,
-                        //               color: Colors.white,
-                        //             )
-                        //           ],
-                        //         ),
-                        //       ),
-                        //       IconButton(
-                        //           onPressed: () async {
-                        //             await deleteInvestmentData();
-                        //           },
-                        //           icon: Icon(
-                        //             Icons.delete,
-                        //             color: Colors.red,
-                        //           ))
-                        //     ],
-                        //   ),
-                        // )
                       ],
                     ),
                   );
