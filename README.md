@@ -8,10 +8,10 @@ InvestFolio is a Flutter app designed to help users track their offline investme
 - **Profitability Analysis:** View insights into your investments, including total returns and profitability.
 - **User-Friendly Interface:** A simple and intuitive interface for a seamless user experience.
 
-## Download APK
+## Download APK OR VISIT WEBSITE
 
 You can download the latest version of InvestFolio [here](https://drive.google.com/drive/folders/1zFh3fc9PYf4WHf531mvH6rjokzeNrZET?usp=sharing)
-Or
+< br / > Or< br / >
 You can visit [website](https://investfolio.site)
 
 
